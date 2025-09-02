@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout } from "../../../../layout";
 import { useCreateNewBlogMutation } from "../../../../app/api";
 import { AppButton, AppInput, PageTitle } from "../../../../component";
@@ -12,6 +12,8 @@ export const NewBlogPage = () => {
   const [NewBlog, { isLoading, isSuccess, data, isError, error }] =
     useCreateNewBlogMutation();
   const navigate = useNavigate();
+  const [featuredImage, setFeaturedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   useEffect(() => {
     if (isError) {
@@ -28,7 +30,44 @@ export const NewBlogPage = () => {
 
   const handleSubmit = async (data: any) => {
     console.log(data);
-    await NewBlog(data);
+    
+    // Convert image to base64 if present
+    let featuredImageBase64 = "";
+    if (featuredImage) {
+      featuredImageBase64 = await convertToBase64(featuredImage);
+    }
+    
+    const blogData = {
+      ...data,
+      featuredImage: featuredImageBase64,
+      author: "Admin",
+      isPublished: true
+    };
+    
+    await NewBlog(blogData);
+  };
+  
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.currentTarget.files?.[0]) {
+      const file = e.currentTarget.files[0];
+      setFeaturedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
   return (
     <Layout pageTitle="Write blogs for user">
@@ -69,15 +108,20 @@ export const NewBlogPage = () => {
               <input
                 type="file"
                 accept="image/*"
-                // onChange={(e) => {
-                //   if (e.currentTarget.files?.[0]) {
-                //     setImage(e.currentTarget.files[0]);
-                //   }
-                // }}
+                onChange={handleImageChange}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
                file:rounded-full file:border-0 file:text-sm file:font-semibold
                file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
               />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-md border"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-5">
