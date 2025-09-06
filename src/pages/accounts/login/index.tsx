@@ -6,7 +6,7 @@ import { ISignInProps } from "../../../interface";
 import { Formik } from "formik";
 import { SignInSchema, SignInValidationValue } from "../../../validation";
 import { useAppDispatch } from "../../../app/hooks";
-import { handleAuthentication } from "../../../app/features";
+import { handleAuthentication, removeAuthentication } from "../../../app/features";
 
 export const LoginPage = () => {
      const [LoginAdmin, { isError, error, isSuccess, data }] = useLoginAdminAccountMutation();
@@ -15,6 +15,9 @@ export const LoginPage = () => {
 
      useEffect(() => {
           if (isError) {
+               // Clear localStorage on authentication errors
+               localStorage.removeItem("ADMIN");
+               dispatch(removeAuthentication());
                console.log(error);
           }
           if (isSuccess) {

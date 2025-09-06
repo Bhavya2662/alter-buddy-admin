@@ -37,9 +37,32 @@ export const Layout: FC<ILayoutProps> = ({ pageTitle, children }) => {
      const navigate = useNavigate();
 
      useEffect(() => {
-          if (token) {
-               dispatch(handleAuthentication(token));
-          }
+          const validateToken = async () => {
+               if (token) {
+                    try {
+                         // Test token validity
+                         const response = await fetch(`${process.env.REACT_APP_API_URL}/admin/test`, {
+                              headers: { 'Authorization': `Bearer ${token}` }
+                         });
+                         
+                         if (response.ok) {
+                              dispatch(handleAuthentication(token));
+                         } else {
+                              // Token invalid, clear storage
+                              localStorage.removeItem("ADMIN");
+                              dispatch(removeAuthentication());
+                              navigate("/", { replace: true });
+                         }
+                    } catch (error) {
+                         localStorage.removeItem("ADMIN");
+                         dispatch(removeAuthentication());
+                         navigate("/", { replace: true });
+                    }
+               }
+          };
+          
+          validateToken();
+          
           if (isLogoutError) {
                console.log(logoutError);
           }
